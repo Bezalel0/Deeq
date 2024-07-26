@@ -1,0 +1,71 @@
+-- ... (previous code remains the same)
+
+-- Dragging functionality
+local UserInputService = game:GetService("UserInputService")
+local dragging
+local dragStart
+local startPos
+local lastPos
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    local newPosition = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    
+    -- Ensure the GUI stays within screen bounds
+    local guiSize = frame.Visible and frame.AbsoluteSize or minimizedButton.AbsoluteSize
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    
+    newPosition = UDim2.new(
+        newPosition.X.Scale,
+        math.clamp(newPosition.X.Offset, 0, screenSize.X - guiSize.X),
+        newPosition.Y.Scale,
+        math.clamp(newPosition.Y.Offset, 0, screenSize.Y - guiSize.Y)
+    )
+    
+    lastPos = newPosition
+    
+    if frame.Visible then
+        frame.Position = newPosition
+    else
+        minimizedButton.Position = newPosition
+    end
+end
+
+local function onInputBegan(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Visible and frame.Position or minimizedButton.Position
+        lastPos = startPos
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end
+
+local function onInputChanged(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateDrag(input)
+    end
+end
+
+frame.InputBegan:Connect(onInputBegan)
+minimizedButton.InputBegan:Connect(onInputBegan)
+UserInputService.InputChanged:Connect(onInputChanged)
+
+-- Modify the toggleMinimize function
+local function toggleMinimize()
+    frame.Visible = not frame.Visible
+    minimizedButton.Visible = not minimizedButton.Visible
+    
+    if frame.Visible then
+        frame.Position = lastPos
+    else
+        minimizedButton.Position = lastPos
+    end
+end
+
+-- ... (rest of the code remains the same)
